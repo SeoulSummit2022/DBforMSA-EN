@@ -1,3 +1,9 @@
+## Event Engine Region - ap-northeast-2 (Seoul)
+
+---
+
+
+
 # Create Key pair
 
 1. Login to the AWS Management Console.
@@ -212,4 +218,4 @@
 
 ---
 
-[To the next - workshop01(MongoDB를 활용한 CRM 리포트 서비스 분리) ](../workshop01/workshop01.md) 
+[To the next - workshop01(Separation of CRM Report Service Using MongoDB) ](../workshop01/workshop01.md) 
