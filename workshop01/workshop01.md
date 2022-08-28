@@ -44,6 +44,7 @@ So you came up with the idea of changing data before 2019 from a multi-joined RD
 
 So how can you easily transfer complex structured data stored in an existing Oracle to a NoSQL (MongoDB) database?
 
+% CRM reports usually join 6 ~ 14 tables in production environment, but we will only join 2 tables for workshop.
 ```
 
 
@@ -107,41 +108,43 @@ So how can you easily transfer complex structured data stored in an existing Ora
 5. Run Query 1 ~ Query 5 to check CRM DB data in Oracle
 
 ```
-Query 1 : CUSTOMERS CUSTOEMR_SERVIE_HISTORY Table 의 일부 Data를 확인
+Query 1 : CHECK CUSTOMERS, CUSTOMER_SERVICE_HISTORY TABLE
 
-Query 2 : CUSTOMERS 와 CUSTOMER_SERVICE_HISTORY Table을 Join한 결과를 확인(고객 상담 LOG Data)
-(실제 CRM System에서는 보통 Table이 6~14개까지 Join이 됩니다, 저희는 실습을 위해서 간략화하여 2개 Table만 Join합니다.)
+Query 2 : JOIN CUSTOMERS and CUSTOMER_SERVICE_HISTORY TABLE
+(CRM reports usually join 6 ~ 14 tables in production environment, but we will only join 2 tables for workshop.)
 
-Query 3 : Query2(고객 상담 LOG Data)의 총 갯수를 확인
+Query 3 : CHECK # OF CUSTOMERS JOIN CUSTOMER_SERVICE_HISTORY TABLE
 
-Query 4 : Query2(고객 상담 LOG Data)의 Data 중 조회용으로만 사용 될 2019년 1월 1일 이전 데이터의 갯수 확인
--- 4286건의 Data를 확인
+Query 4 : CHECK # OF CUSTOMERS JOIN CUSTOMER_SERVICE_HISTORY TABLE PRIOR TO Jan-01-2019
+-- 4286rows
 
-Query 5 : CUSTOMERS 와 CUSTOMER_SERVICE_HISTORY Table을 Join한 결과 중 2019년 1월 1일 이전 데이터 확인
+Query 5 : CHECKING DATA FROM CUSTOMERS JOIN CUSTOMER_SERVICE_HISTORY TABLE PRIOR TO Jan-01-2019
 
 ```
 
-% 
+% How to execute : 
 
-Query 실행은 원하는 SQL문장에 커서를 가져가거나 Highlight한 후 초록색 실행 버튼을 클릭합니다.
+1. Highlight what you want to execute
+2. Click Run Statement
 
-![image-20220216131033286](images/image-20220216131033286.png)
+![image-20220828183158404](images/image-20220828183158404.png)
 
 
 
 ---
 
-6. 이제 Query 5에서 확인한  2019년 이전 Data를 MongoDB로 이관하기 위해서 Materialized View를 생성하겠습니다. 
+6. Let's create **Materialized View** to migrate data prior to 1st-Jan-2019 that we already checked in Query 5
 
-   Query 6을 실행합니다. (10~15초 정도 소요)
-
-​       이제 `CSHARCH`라는 MVIEW가 만들어졌으며, 이후 CSHARCH MVIEW의 DATA를 MongoDB로 이관 할 것입니다.
-
-​       % 2019년 이전 Data뿐 아니라 전체 Data를 이관 할 경우 where 조건에서 call_date 조건절을 제거 하면 모든 데이터를 이관합니다.
+   Run **Query 6** (Takes 10~15sec to create MVIEW)
+   
+   Now you have MVIEW -  `CSHARCH` , and you will migrate `CSHARCH` data into MongoDB. 
+   
+   % If you want to migrate all data not only data prior to 2019, you just need to create MVEIW with no where condition. 
 
 ```
--- 전환 대상인 2019년 이전 CUSTOMERS+CUSTOMER_SERVICE_HISTORY 데이터들을 MVIEW로 생성합니다. 
--- 실제 DB에서는 보통 6~14개 정도의 Table이 Join되지만, 워크샵에서는 2개의 Table만 Join 합니다.
+-- Creating MVIEW that includes joined data between CUSTOMERS and CUSTOMER_SERVICE_HISTORY prior to 1st-Jan-2019
+-- For CRM report, application joins 6~14 tables, but we only join 2 tables for workshop.
+
 create MATERIALIZED VIEW CSHARCH
   NOLOGGING
   CACHE
@@ -158,13 +161,15 @@ create MATERIALIZED VIEW CSHARCH
 
 ---
 
-7. `Bastion Server`에서 `Chrome`을 실행하고, 즐겨 찾기에서 `CRM-LIST`를 Click합니다. (크롬은 TaskBar에 QuickStart로 있습니다.)
+7. Execute `Chrome` in `Bastion Server`, and Click `CRM-LIST` in Favorite bar.
 
-아래의 Page처럼 `Legacy Java Application`이 `Main DB인 Oracle` 과 연결되서 동작하고 있습니다. 
+   You will see **Legacy java application** that is connecting to `Oracle DB`. 
 
-고객 중에서 1번 'Mary Schaefer'의 고객 상담 내역을 조회해 봅니다. 
+   Let's check CRM  data of customer #1 - **Mary Schaefer**. 
 
-"Customer Satisfaction" Page는 Oracle에서 2개의 테이블 `CUSTOMERS`, `CUSTOMER_SERVICE_HISTORY`를 JOIN해서 보여줍니다. (실제 CRM시스템은 더 많은 Table이 Join되지만, 실습에서는 2개 Table만을 Join 합니다.)
+   % **Customer Satisfaction** Page shows history data from `CUSTOMERS` and `CUSTOMER_SERVICE_HISTORY` .
+
+
 
 ![image-20220501153530978](images/image-20220501153530978.png)
 
@@ -176,30 +181,31 @@ create MATERIALIZED VIEW CSHARCH
 
 ---
 
-8. 이제 "고객 상담 내역" Data 중에서 2019년 1월 1일 이전의 Data를 MongoDB로 Migration 해보겠습니다.
+8. Let's migrate data prior to 1st-Jan-2019 in CRM.
 
-그리고 Legacy Java Appliation 중 `crm-show.jsp`에 해당하는 '고객 상담 내역 조회' 업무를 `Python Flask`로 변경하겠습니다. 
+   Then you will change CRM application from **legacy java application** - `crs-show.jsp` to **Python Flask application**. 
 
-**우선 Oracle Data를 MongoDB로 Migration 해보겠습니다.**
+   First of all, you are going to migrate **Oracle data** to **MongoDB**. 
+
+
 
 ```
-이제 여러분은 Database Migration Service을 이용하여 다음 과정을 통해 Oracle To MongoDB로 Data를 이관하게 됩니다.
+You are going to migrate data from Oracle to MongoDB using DMS(Database Migration Service). 
+Data migration by DMS are consists of 4 steps. 
 Data 이관은 크게 아래 3가지 작업을 통해서 이뤄집니다.
 
-1. Replication Instance 생성 : Data 이관 작업을 수행 할 Instance를 생성하는 과정입니다.
-2. ENDPOINT 생성
-	- Source ENDPOINT 생성 : Legacy Oracle DB를 Source로 사용 할 ENDPOINT를 생성하는 과정입니다.
-	- Target ENDPOINT 생성 : 새로운 MongoDB를 Target으로 사용 할 ENDPOINT를 생성하는 과정입니다.
-3. DMS TASK 생성 
-  - Source Oracle DB의 이관 대상 Schema와 Table을 선택하고, Target MongoDB에 어떤 Collection으로 넣을지 설정합니다.
-  - 해당 설정을 토대로 Source to Target으로 Data 이관이 수행됩니다.
+1. Create Replication Instance : Replication instance will migrate data from source to target.
+2. Create Source ENDPOINT : Endpoint for source Oracle DB to read data
+3. Create Target ENDPOINT : Endpoint for target MongoDB to write data
+4. Create DMS Tasks
+  - Choosing schema and table that to read from Source and Choosing collection to write to Target.
 ```
 
 
 
 ---
 
-9. 사용중인 PC의 AWS Console에서 Database Migration Service로 이동합니다. **(Bastion 서버가 아닌 사용자 PC에서 작업!!)**
+9. Move to **Database Migration Service** in AWS Console. (You need to use your labtop, not in Bastion.)
 
 ![image-20220216104215418](images/image-20220216104215418.png)
 
@@ -207,116 +213,117 @@ Data 이관은 크게 아래 3가지 작업을 통해서 이뤄집니다.
 
 ---
 
-10. 먼저 Replication Instance(복제 인스턴스)를 생성합니다. 
+10. Create **Replication Instance** 
 
-`Replication Instances`(복제 인스턴스)를 Click합니다.
+Click **Replication Instances** 
 
-"Create Replication Instances"(복제 인스턴스 생성)를 Click합니다.
+Click **Create Replication Instances**
 
 ![image-20220216105128847](images/image-20220216105128847.png)
 
 
 
-**다음의 화면처럼 "Replication Instance" 정보를 입력합니다. 모두 입력 후 화면 맨 아래 "Create"를 Click합니다.**
+Enter the following information for the **Replicatin Instance**. Then, Click on the **Create** Button. 
+
+
 
 ```
 Name : ri-oracle-to-mongodb
 Description : Replication Instance for Migration
-Instance class : dms.t3.small 또는 dms.t3.medium 또는 dms.t3.large
+Instance class : dms.t3.small or dms.t3.medium or dms.t3.large
 Engine Version : 3.4.6
 Allocated Storage : 50
 VPC : OnPREM
 Multi AZ : Dev
-Publicly accessible : 체크 안함
+Publicly accessible : Uncheck
 ```
 
 ![image-20220216112323871](images/image-20220216112323871.png)
 
 
 
-**`ri-oracle-to-mongodb`가 Available(사용 가능) Status로 정상 생성될때까지 기다립니다.(약 5분 소요)**
+Wait for creating replication instance. **ri-oracle-to-mongodb** will be Available, then go to next step. (It taeks approx. 5min)
 
 ![image-20220216112729391](images/image-20220216112729391.png)
 
 ---
 
-11. Oracle DB를 읽어 올 Source Endpoint를 생성합니다.
+11. Create **Source ENDPOINT for Oracle** to read data
 
-화면 왼쪽 메뉴에서 `Endpoints`(엔드포인트)를 클립합니다. "Create endpoint"(엔드포인트 생성)을 클릭합니다. 
+    Click **Endpoints**
+
+    Click **Create endpoint**
 
 ![image-20220216132936892](images/image-20220216132936892.png)
 
 
 
-**다음의 화면처럼 "Endpoint" 정보를 입력합니다. 모두 입력 후 화면 맨 아래 "Create endpoint"를 Click합니다.**
+Enter the following information for the **Source Endpoint**. Then, Click on the **Create endpoint** Button. 
 
 ```
-Endpoint Type(엔드포인트 유형) : Source endpoint(소스 엔드포인트)
+Endpoint Type : Source endpoint
 
 Endpoint Identifier : source-oracle-crm
 Source Engine : Oracle
 
-Access to endpoint database(엔드포인트 데이터베이스에 액세스) : Provide access information manually(수동으로 액세스 정보 제공)
+Access to endpoint database : Provide access information manually
 Server Name : 10.100.1.101
 Port : 1521
 User name : dms
 Password : dms
 SID/Service name : XE
 
-% Database Migration Service를 사용하기 위해서는 사전에 Source DB에서 해줘야 하는 선행 작업들이 존재합니다.
-% Data Access를 위한 권한 설정과 CDC를 위한 권한 설정등입니다. 이번 워크샵에서는 해당 작업들을 사전에 해두었습니다.
-% 좀 더 자세한 내용은 https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Source.Oracle.html을 보시거나
-% 바탕화면의 Query.txt의 2번째 "SQL Developer를 이용하여 OnPREM Oracle 선행 작업"을 보시면 됩니다.
-
+% You have to complete some pre-requirements such as 'create user' or 'grant some permission' to use DMS.
+% You can see the details in https://docs.aws.amazon.com/dms/latest/userguide/CHAP_Source.Oracle.html
+% Or you can see command in Query2.txt on desktop in bastion server.
 ```
 
 ![image-20220216133538337](images/image-20220216133538337.png)
 
+Check connectivity between **Source Endpoint** and **Replication Instance**
 
+![image-20220828214313319](images/image-20220828214313319.png)
 
-**생성된 Source Endpoint와 "Replication Instance - ri-oracle-to-mongodb" 간의 connection을 확인**
-
-![image-20220216133749085](images/image-20220216133749085.png)
-
-![image-20220216134012293](images/image-20220216134012293.png)
+![image-20220828214403704](images/image-20220828214403704.png)
 
 ![image-20220216134056985](images/image-20220216134056985.png)
 
 ---
 
-12. Target이 되는 MongoDB용 `Target Endpoint`를 생성합니다.
+12. Create **Target ENDPOINT for MongoDB** to write data
 
 ![image-20220216134237337](images/image-20220216134237337.png)
 
-**다음의 화면처럼 "Endpoint" 정보를 입력합니다. 모두 입력 후 화면 맨 아래 "Create endpoint"를 Click합니다.**
+Enter the following information for the **Target Endpoint**. Then, Click on the **Create endpoint** Button. 
 
 ```
-Endpoint Type(엔드포인트 유형) : Target endpoint(대상 엔드포인트)
+Endpoint Type : Target endpoint
 
 Endpoint Identifier : target-mongodb-csharch
 Target Engine : Amazon DocumentDB (with MongoDB compatibility)
 
-Access to endpoint database(엔드포인트 데이터베이스에 액세스) : Provide access information manually(수동으로 액세스 정보 제공)
+Access to endpoint database : Provide access information manually
 Server Name : 10.100.1.101
 Port : 27017
 User name : myadmin
 Password : Welcome1234
 Database Name : crm
 
-% Workshop에서는 실습 비용을 줄이고, 편의성을 높이기 위해서 같은 서버에 설치된 MongoDB를 사용하고 있습니다. 
-% Workshop같은 개발 환경에서는 설치형 Standalone을 사용하고, 실제 PROD환경에서는 HA, Security, Backup, 운영등을 위해서
-% Amazon DocumentDB나 MongoDB Atlas를 사용하시는 것이 좋습니다. 
+% In this workshop, we are using same server for both of Oracle and MongoDB to reduce cost.
+% You can use standalone for DEV/Test env, it's better to use Amazon DocumentDB or MongoDB Atlas 
+% to secure HA, Security, auto backup and operational excellence in Production env.
+
 ```
 
 ![image-20220216134837777](images/image-20220216134837777.png)
 
 
 
-**생성된 Target Endpoint와 "Replication Instance - ri-oracle-to-mongodb" 간의 connection을 확인**
+Check connectivity between **Target Endpoint** and **Replication Instance**
 
-![image-20220216135043817](images/image-20220216135043817.png)
+![image-20220828215206475](images/image-20220828215206475.png)
 
-![image-20220216135144561](images/image-20220216135144561.png)
+![image-20220828215315153](images/image-20220828215315153.png)
 
 ![image-20220216135245187](images/image-20220216135245187.png)
 
@@ -324,50 +331,52 @@ Database Name : crm
 
 ---
 
-13. Source Oracle Data를 Target MongoDB로 전환 시킬 DMS Task를 생성합니다.
+13. Create **DMS Task** to choose **Schema/Table and Collection**
 
-`Database migration tasks`(데이터베이스 마이그레이션 태스크)를 Click 합니다. "Create task(태스크 생성)"를 Click 합니다.
+    Click **Datagase migration tasks**
+
+    Click **Create task**
 
 ![image-20220216135451371](images/image-20220216135451371.png)
 
-**다음의 화면처럼 "Task" 정보를 입력합니다. 모두 입력 후 화면 맨 아래 "Create task"를 Click합니다.**
+Enter the following information for the **Task**. Then, Click on the **Create task** Button. 
 
-**Task configuration(태스크 구성)**
-
-```
-Task identifier(태스크 식별자) : oracle-csharch-to-mongodb
-Replication instance(복제 인스턴스) : ri-oracle-to-mongodb
-Source database endpoint(소스 데이터베이스 엔드포인트) : source-oracle-crm
-Target database endpoint(대상 데이터베이스 엔드포인트) : target-mongodb-csharch
-Migration type(마이그레이션 유형) : Migrate existing data(기존 데이터 마이그레이션)
+**Task configuration**
 
 ```
-
-**Task setting(태스크 설정)**
-
-```
-Target table preparation modeInfo(대상 테이블 준비 모드) : Drop tables on target(대상에서 테이블 삭제)
-Include LOB columns in replication(복제에 LOB 열 포함) : Limited LOB mode (제한적 LOB 모드)
-Enable CloudWatch logs(CloudWatch 로그 활성화) : 체크 활성화
-```
-
-**Table mappings(테이블 매핑) - (Source DB의 Schema와 Table중에 마이그레이션 할 대상을 선택하는 부분입니다.)**
+Task identifier : oracle-csharch-to-mongodb
+Replication instance : ri-oracle-to-mongodb
+Source database endpoint : source-oracle-crm
+Target database endpoint : target-mongodb-csharch
+Migration type : Migrate existing data
 
 ```
-"Add new selection rule(새 선택 규칙 추가)" Click
 
-Schema : Enter a schema(스키마를 입력하십시요)
+**Task setting**
+
+```
+Target table preparation modeInfo : Drop tables on target
+Include LOB columns in replication : Limited LOB mode 
+Enable CloudWatch logs: Check Enable
+```
+
+**Table mappings - (Choose Schema / Table to be migrated)**
+
+```
+"Add new selection rule" Click
+
+Schema : Enter a schema
 Schema name : HR
 Table name : CSHARCH
-Action : include(포함)
+Action : include
 
-% Source Oracle DB의 HR Schema(User)의 MVIEW CSHARCH(2019년 이전 고객 문의 데이터)를 대상으로 지정
+% Choose SCHEMA - HR, Table - CSHARCH(MVIEW CRM data prior to 2019) 
 ```
 
-**Migration task startup configuration(마이그레이션 태스크 시작 구성)**
+**Migration task startup configuration**
 
 ```
-Start migration task(마이그레이션 태스크 시작) : Manually later(나중에 수동으로)
+Start migration task : Manually later
 ```
 
 
@@ -384,47 +393,52 @@ Start migration task(마이그레이션 태스크 시작) : Manually later(나�
 
 
 
-**Task Status가 `Ready(준비 완료)`가 될때까지 기다립니다.**
+Wait till **Task status** is **Ready**
 
 ![image-20220216140643173](images/image-20220216140643173.png)
 
 
 
-**Task를 실행합니다. `Actions` => `Restart/Resume`(작업=>다시 시작/재개)**
-
-![image-20220216140806184](images/image-20220216140806184.png)
+Start Task - **Actions** => **Restart/Resume**
 
 
 
-**Task Identifier : oracle-csh-to-mongodb Click을 Click하여 DMS TASK의 Migration 상황을 모니터링 합니다.**
-
-![image-20220216141021565](images/image-20220216141021565.png)
+![image-20220828220413055](images/image-20220828220413055.png)
 
 
 
-**Table statistics(테이블 통계) Tab을 눌러서 데이터 이관을 확인합니다, 조금 기다리면 대상 Data  4286건이 정상적으로 이관되었음을 확인합니다.**
+Click **Task Identifier** - **oracle-csh-to-mongodb** to monitor migration status
+
+![image-20220828220537219](images/image-20220828220537219.png)
+
+
+
+Click **Table statiscis** tab to monitor migration status. DMS will migrate all data - 4286 rows shortly.
 
 ![image-20220216141842724](images/image-20220216141842724.png)
 
 ---
 
-14. Target MongoDB에 접속하여 데이터 이관이 되었는지 확인합니다. `원격 터미널(mstsc.exe)`을 이용하여 `Bastion Server`로 접속합니다.
+14. Let's connect to MongoDB to validate data. 
+
+    Connecting to **Bastion Server** using **mstsc.exe** in windows or **remote desktop** in Mac. 
 
 ---
 
-15. MobaXterm에서 MongoDB Session으로 이동합니다.
+15. Go to **MongoDB** Session in MobaXterm 
 
 ---
 
-16. 아래처럼 입력하여 mongodb로 접속 하고, Data 건수를 확인합니다.
+16. **Execute** the following statement to count data.
 
-    CSHARCH collection의 document 숫자가 4286임을 확인합니다.
+    **Validate** CSHARCH collection has to have 4286 documents.
 
-    Data 중에서 CALL_DATE가 가장 오래된것 과 최신 것을 확인합니다. 
+    **Validate** the datas are prior to 1st-Jan-2019.
 
-    의도한대로 2019년 1월 1일 이전의 Data들만이 MongoDB로 이관 된 것을 확인 할 수 있습니다. 
+    
+    
 
-**MongoDB 명령어**
+**MongoDB Statement**
 
 ```
 mongoadmin
@@ -435,7 +449,7 @@ db.CSHARCH.find({},{CUST_ID:1,EMAIL:1,CALL_DATE:1}).sort({CALL_DATE:+1}).limit(1
 db.CSHARCH.find({},{CUST_ID:1,EMAIL:1,CALL_DATE:1}).sort({CALL_DATE:-1}).limit(1)
 ```
 
-**MongoDB 명령 실행 결과 및 Output Sample**
+**MongoDB Statement and output example**
 
 ```
 
@@ -459,7 +473,7 @@ CSHARCH
 >
 
 
-% 참고
+% check mongoadmin aliasing
 ec2-user@ip-10-100-1-101:/home/ec2-user> alias |grep mongoadmin
 alias mongoadmin='mongo -u myadmin -p Welcome1234   --authenticationDatabase "admin"'
 ```
@@ -468,13 +482,15 @@ alias mongoadmin='mongo -u myadmin -p Welcome1234   --authenticationDatabase "ad
 
 ---
 
-17. 이제 Data이관이 완료되었습니다. 이제 `Legacy Java Application`에서 경량화된 `Python Flask Application`으로 바꿔보겠습니다.
+17. You've just completed data migration.
 
-MobaXterm에서 `AP-FLASK Session`으로 이동합니다. 
+    Let's **change the application** from **legacy java application** to **python flask application**
+
+    Go to **AP-FLASK Session** in MobaXterm
 
 ---
 
-18. 다음의 명령어를 실행하여 Flask Application을 실행합니다.
+18. **Execute** the following commands to run **Flask application**.
 
 ```
 ec2-user@ip-10-100-1-101:/home/ec2-user> cd workshop01
@@ -494,9 +510,11 @@ ec2-user@ip-10-100-1-101:/home/ec2-user/workshop01> source bin/activate
 
 ---
 
-19. `Chrome`을 실행하고 즐겨 찾기에서 `FLASK-1`을 Click합니다. Python FLASK App에서 사용자별 상담 내역을 확인 할 수 있습니다. 
+19. Click **FLASK-1** from favorite in **Chrome** as following. 
 
-FLASK-1은 고객 중에서 1번 'Mary Schaefer'의 고객 상담 내역을 조회하는 Page입니다.
+    You can see the CRM history data from MongoDB
+
+    % FLASK-1 shows customer #1 **Mary Schaefer** 's CRM history
 
 ![image-20220403002805726](images/image-20220403002805726.png)
 
@@ -504,7 +522,7 @@ FLASK-1은 고객 중에서 1번 'Mary Schaefer'의 고객 상담 내역을 조�
 
 ---
 
-20. FLASK-4를 눌러서 4번 고객의 상담 내역을 확인합니다.
+20. Click **FLASK-4** to see customer 4 from favorite in **Chrome** as following. 
 
 ![image-20220403002822619](images/image-20220403002822619.png)
 
@@ -512,17 +530,19 @@ FLASK-1은 고객 중에서 1번 'Mary Schaefer'의 고객 상담 내역을 조�
 
 ---
 
-21. MobaXTerm으로 돌아와서 ctrl+c 를 눌러서 Flask App을 종료합니다.
+21. Go to MobaXterm, then press **crtl+c** to terminate Flask application
 
 ---
 
-22. 다음처럼 실행하여 Flask Application을 확인합니다.
+22. Let's see the code of Flask applcation as following
 
     ![image-20220331112250026](images/image-20220331112250026.png)
 
 
 
-**Source Code는 다음과 같습니다. Parameter로 넘어온 고객번호를 이용하여 API가 MongoDB의 Data를 가져오고 결과를 사용자에게 보여줍니다. MongoDB에서 가져온 데이터를 render_template을 사용하여 사용자에게 page를 return합니다.**
+New Flask application retreives data from MongoDB using API - **FIND()** with given parameter, 
+
+then returns page to render HTML using **render_template()**. 
 
 ```
 import sys
@@ -582,28 +602,27 @@ if __name__ == '__main__':
 ---
 
 ```
-이제 여러분은 복잡한 Join이 필요한 고객상담 업무 Data를 쉽게 Document 형태의 몽고디비로 이관했습니다.
-Document 형태의 Data를 사용함으로써 하나의 Page를 위해 여러번의 Query를 하거나, 여러 Table을 조회 할 필요가 없어졌습니다.
-또한 Legacy Java Application 중 "사용자 상담 내역" Report Application을 Flask로 변경하였습니다. 
+Now you've just migrated complexed joined Oracle data to MongoDB using DMS.
+New application uses MongoDB to retrieve document type data, so no need to query multiple times and no need to join tables.
 
-이 작업을 통해서 Database 관점에서는 복잡한 Join Query가 줄어들면서 Main Oracle 서버의 부하가 줄어들었고, 
-데이터 이관을 통해 스토리지 사용량도 줄어 들었습니다.
+The migration results in reducing overhead from Oracle to remove heavy join opration, 
+and developers is able to develop and deploy quickly and easily to use schema-less MongoDB.
 
-Application 관점에서는 개발자들이 별도의 서비스와 디비로 분리되었기 때문에 보다 빠른 개발과 배포가 가능하게 되었으며,
-Schema-less한 NOSQL의 특성으로 개발 편의성이 증가하였습니다.
 ```
 
 ---
 
 ```
-% Workshop에서는 실습 비용을 줄이기 위해서 EC2에 MongoDB를 설치해서 실습을 진행하였습니다.
-% 간단한 개발 환경의 경우 EC2 위에서 MongoDB - Standard Alone 방식으로 개발을 진행하고, 
-% 실제 운영 환경에서는 뛰어난 가용성과 성능, 백업 기능등을 관리형 서비스인 Amazon DocumentDB나 Atlas를 고려하실 수 있습니다.
+
+% In this workshop, we are using same server for both of Oracle and MongoDB to reduce cost.
+% You can use standalone for DEV/Test env, it's better to use Amazon DocumentDB or MongoDB Atlas 
+% to secure HA, Security, auto backup and operational excellence in Production env.
+
 ```
 
 ---
 
-[다음 워크샵으로 - workshop02(REDIS를 활용한 실시간 리더보드 만들기) ](../workshop02/workshop02.md) 
+[Go to Next Workshop - workshop02(Building real time leader board using REDIS) ](../workshop02/workshop02.md) 
 
 
 
