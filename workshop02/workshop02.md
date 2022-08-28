@@ -345,7 +345,7 @@ Simulation SeoulSummit.Workshop2_legacy started...
 3. Move to the `Redis` in MobaXterm.   
    Excute the script below and check the result.   
    `zrevrange leaderboard 10000 10010` returns the data ranked between 10000th ~ 10010th.   
-    
+   
     You can make the real time leaderboard service simply through sorted set of Redis.
 
 ```
@@ -378,8 +378,8 @@ ec2-user@ip-10-100-1-101:/home/ec2-user/workshop02/msa> redis-cli -a Welcome1234
 ---
 
 4. You can check the test result.   
-The result show you better performance than Oracle test.   
-      
+   The result show you better performance than Oracle test.   
+   
   
     ![image](./images/redis_stat.png)
 
@@ -413,5 +413,5 @@ You don't need systems for excuting batch job to make leaderboard so can save op
 
 ---
 
-[To the next - workshop03(Redis를 활용하여 한정판매 이벤트 처리하기)](../workshop03/workshop03.md) 
+[To the next - workshop03(Accelerate Limited Offer using REDIS)](../workshop03/workshop03.md) 
 
