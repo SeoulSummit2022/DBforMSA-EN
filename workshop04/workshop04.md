@@ -1,68 +1,57 @@
-# Workshop04(DynamoDB를 활용하여 구매내역 조회 서비스  전환하기)
+# Workshop04(Migrating an order service using DynamoDB)
 
 
 
-**엔터프라이즈 모놀리틱 DB를 MSA 구조로 전환하기 세션의 Workshop04에 오신 것을 환영합니다.  **
-
-**Workshop04 에서는 Oracle의 주문 조회용 데이터를 Amazon DynamoDB 로 마이그레이션해 보고, Gatling을 활용하여 성능 테스트를 수행해 보도록 하겠습니다.**
+**Welcome to the Workshop04. In this workshop, You will learn how to migrate data from Oracle to DynamdoDB using DMS**   
 
 ---
 
 ### Architecture Diagram
-![sessions](./images/workshop4_diagram.png)
+![sessions](./images/image-1.png)
 ---
 
-### 시나리오 소개
+### User story
 
-~~~
-당신은 온라인 마켓 서비스를 담당하고 있습니다.
+```
+You are responsible for database for order service. 
 
-현재 구매 서비스는 OLTP 서비스에서 가장 일반적으로 사용되는 Oracle Database를 데이터 저장소로 사용하고 있습니다.
-데이터 모델링 규칙에 맞추어 정규화된 여러 테이블들에 데이터들이 저장되고, 각 테이블들은 참조키로 관계가 맺어져 있습니다.
-각 요청에 필요한 데이터들은 여러 테이블들을 조인하여 만들어지고 어플리케이션으로 전달됩니다.
-서비스가 점점 확장됨에 따라 비지니스 규칙에 따라 정규화된 여러 테이블들에 데이터를 인서트하거나,
-여러 테이블들을 조인해서 데이터를 조회하는 부담이 점점 늘어나고 있습니다.
-향후 서비스의 확장을 대비하여 유연한 확장성과 고가용성, 일관된 성능을 보장하는 AWS 완전관리형의 serverless nosql DB인
-DynamoDB 로 데이터를 마이그레이션 하려고 합니다.
+The order service uses Oracle database to store its data.
+Data is stored in several tables normalized and each table has relationships with other tables.
+To generate order list information, Joining several tables is needed.
 
-이번 실습을 통해 간단한 구매내역 조회 서비스를 대상으로 Oracle 과 DynamoDB 성능 비교를 해보고,
-데이터 마이그레이션은 DMS를 활용해봄으로서 RDB 에서 NoSQL 로 마이그레이션 하는 기본적인 방법을 배워봅니다.
-~~~
+As the service becomes more popular, the load on the system is increasing.
+You have plan for migrating data from Oracle to DynamoDB to prepare the expansion of the service.
+```
 ---
 
-# 작업에 필요한 MobaXterm Session 3개를 생성합니다.
+# Opne three MobaXterm sessions.
 
-1. Session을 생성하는 방법은 Workshop01의 Session 생성 단계를 참고 합니다.
-2. Session의 이름을 각각 `Oracle`, `Legacy_server`, `MSA_server` 으로 변경합니다.
+1. You can find the way how to make a session at the Workshop01.
+2. Change the name of session. (`Oracle`, `Legacy_server`, `MSA_server`)
 ![sessions](./images/sessions.png)
 
 ---
 
 # Oracle to DynamoDB migration
 
-### 1. Oracle 데이터 확인
-Bastion server에 Taskbar에서 sqldeveloper아이콘을 클릭하여 sqldeveloper를 실행합니다.
-
+### 1. Check Oracle data
+Connect the oracle database via sqldeveloper. Click the sqldeveloper icon.
 ![sessions](./images/taskbar.png)   
-
-`oracle-oshop`  오른쪽 마우스 클릭 후 팝업메뉴에서 Connect를 클릭합니다.
-
+   
+Connect `oracle-oshop` database.
 ![sessions](./images/connect.png)   
-
-오른쪽 Worksheet에서 아래 두 쿼리를 각각 실행하여 데이터를 확인해 봅니다.   
 
 ---
 
-첫번째 쿼리는 여러 테이블을 조인하여 데이터를 확인하는 쿼리입니다.   
-고객 1번의 구매번호 1번에는 3개의 아이템이 포함되어 있다는 것을 알 수 있습니다.
-관계형 데이터베이스에서는 이런 데이터를 추출하기 위해서 정규화된 여러 테이블들을 조회해야 합니다.   
-   
-두번째 쿼리는 첫번째 결과를 피버팅한 데이터를 보여주는 쿼리입니다.   
-첫번째 쿼리 결과인 3개의 행을 하나의 행으로 피버팅을 통해 변환하였고,   
-변환된 데이터는 DanamoDB로 데이터를 마이그레이션하기 위한 Staging 테이블로 구성될 것입니다.   
+Execute the queries below at the worksheet and check data   
 
-~~~ sql
-# 구매번호(purchaseid) 1번에 해당하는 상품들의 정보를 표시합니다.
+The first query returns the purchase list.   
+As you know you should join multiple tables to see purchase list in relational database.   
+   
+The second query makes pivoted data from the result of the first query.   
+And the result of it will be used as the source data for migration to DynamoDB.   
+
+``` sql
 SELECT  c.customerid, pc.purchaseid, purchaseseq, pd.productname, pd.price, pc.quantity, s.telnumber, pc.purchasedate, c.name, c.address
 FROM purchase pc
 	INNER JOIN customer c
@@ -72,14 +61,10 @@ FROM purchase pc
     INNER JOIN seller s
     ON pd.sellerid = s.sellerid
 where pc.purchaseid=1;
-~~~
+```
 ![sessions](./images/query1_result.png)  
 
----
-
-~~~ sql
-# 위의 쿼리결과를 피버팅하는 쿼리입니다. 
-# DynamoDB로 마이그레이션 하기 전에 이 쿼리를 통해 staging 테이블을 구성하게 됩니다.
+``` sql
 SELECT  c.customerid, pc.purchaseid, pc.purchasedate, c.name, c.address,
         MAX(case when purchaseseq = 1 then purchaseseq else 0 end) PURCHASE_SEQ_1,
         MAX(case when purchaseseq = 1 then pd.productname else '' end) PRODUCT_NAME_1,
@@ -105,18 +90,13 @@ FROM purchase pc
     ON pd.sellerid = s.sellerid
 where pc.purchaseid=1
 group by c.customerid, pc.purchaseid, pc.purchasedate, c.name, c.address;
-~~~
+```
 ![sessions](./images/query2_result.png)   
----
 
 ---
 
-### 2. Oracle에 staging 테이블 구성
-
-Oracle에 있는 데이터를 DynamoDB에 마이그레이션 하기 위해 DynamodDB의 key-value 형태에 맞게 staging 테이블을 만들어 줍니다.   
-sqldeveloper에서 아래 쿼리를 수행합니다.   
-마지막 COMMIT; 문장까지 수행해야 합니다.
-
+### 2. Create a new table for saving the result of data pivoted
+Execute the query below in sqldeveloper   
 ~~~ sql
 CREATE TABLE "OSHOP"."PURCHASE_DYNAMODB_FORMAT" 
 (
@@ -175,77 +155,74 @@ COMMIT;
 
 ---
 
-### 3. DynamoDB로 마이그레이션
+### 3. Migrating data from Oracle to DynamoDB using DMS
 
-스태이징 테이블을 구성하였으니 DMS를 통해서 DynamoDB로 데이터를 마이그레이션 합니다.   
-DMS의 Replication Instance는 `Workshop01에서 사용했던 RI`를 사용합니다.   
+You don't need to create a new replication instance. `Just use the one you already made during the first workshop.`
 
-만약 Workshop01을 수행하지 않았다면 Workshop01의 "Oracle DB의 JOIN DATA를 MongoDB로 마이그레이션"의 10번 단계를 참고하여 Replication Instance를 생성합니다.  
+Create source and target endpoints in [DMS Console](https://ap-northeast-2.console.aws.amazon.com/dms/v2/home?region=ap-northeast-2#dashboard) after preparing a replication instance,
 
-Replication Instance를 생성하였다면 [DMS Console](https://ap-northeast-2.console.aws.amazon.com/dms/v2/home?region=ap-northeast-2#dashboard) 에서 Source와 Target endpoint를 생성합니다.  
-왼쪽 메뉴에서 `Endpoints`로 이동 후 `Create endpoint` 버튼을 클릭합니다.
-아래와 같이 `Source endpoint`에 대한 정보를 입력합니다.
-
+At the left menu, move to the `Endpoints` and click the `Create endpoint`.   
+Refer to the blow and enter the values   
 ```
-* Endpoint type(엔드포인트 유형) : Source endpoint 선택
-* Endpoint identifier(엔드포인트 식별자) : s-seoulsummit-endpoint
-* Source engine(소스 엔진) : Oracle
-* Access to endpoint database(엔드포인트 데이터베이스에 액세스) : Provide access information manually(수동으로 액세스 정보 제공) 선택
-* Server name(서버 이름) : 10.100.1.101
-* Port(포트) : 1521
-* User name(사용자 이름) : oshop
-* Password(암호) : oshop
-* SID/Service name(SID/서비스 이름) : xe   
+* Endpoint type : Choose `Source endpoint`
+* Endpoint identifier : `s-seoulsummit-endpoint`
+* Source engine : `Oracle`
+* Access to endpoint database : Choose `Provide access information manually`
+* Server name : `10.100.1.101`
+* Port : `1521`
+* User name : `oshop`
+* Password : `oshop`
+* SID/Service name : `xe`   
 ```
 ![image 8](./images/8.png)
 
-VPC와 Replication instance 정보를 입력하고 `Run test` 버튼을 클릭하여 연결테스트를 수행합니다.
-Test 가 성공하였다면 `Create endpoint` 버튼을 클릭합니다.  
+Choose VPC and Replication Instance   
+Click `Run test`   
+If the status become `successful`, click `Create endpoint`
 
 ![image 9](./images/9.png)
 
 ---
 
-`Target endpoint`를 생성하기 위해서 `Create endpoint` 버튼을 클릭합니다.
-아래와 같이 Target endpoint 에 대한 정보를 입력합니다.
+Click `Create endpoint` button to create the target endpoint.   
+Refer to the information below.   
+```
+* Endpoint type : Target endpoint
+* Endpoint identifier : t-seoulsummit-dynamodb1
+* Target engine : Amazon DynamoDB
+* Service access role ARN : arn:aws:iam::[Account no(12 digits number)]:role/EC2SSMRole2 
+```
 
-```
-* Endpoint type(엔드포인트 유형) : Target endpoint 선택
-* Endpoint identifier(엔드포인트 식별자) : t-seoulsummit-dynamodb1
-* Target engine(대상 엔진) : Amazon DynamoDB
-* Service access role ARN(서비스 액세스 역할 ARN) : arn:aws:iam::[사용자의 어카운트 번호(12자리 숫자)]:role/EC2SSMRole2 
-```
-(참고) Amazon DynamoDB를 Target engine으로 지정할 경우 Service access role ARN에 DynamoDB 테이블에 접근할 수 있는 권한을 가진 Role을 지정해 주어야 합니다. 해당 Role은 미리 생성해 두었고 AWS Console에서 [CloudFormation](https://ap-northeast-2.console.aws.amazon.com/cloudformation/home?region=ap-northeast-2#/stacks?filteringStatus=active&filteringText=&viewNested=true&hideStacks=false)으로 이동 후 DBforMSA 스택 Outputs 탭에서 확인할 수 있습니다.
+***(참고) You should set a specific role at `Service access role ARN` when the target engine is Amazon DynamoDB in DMS. The role was already created and you can check the ARN at the Outputs tab in [CloudFormation](https://ap-northeast-2.console.aws.amazon.com/cloudformation/home?region=ap-northeast-2#/stacks?filteringStatus=active&filteringText=&viewNested=true&hideStacks=false).***
 
 ![image 9-1](./images/9-1.png)
 
 ![image 10](./images/10.png)
 
-Test endpoint connection을 수행합니다.
+Run connection test.   
 ![image 11](./images/11.png)
 
-다음으로 데이터 마이그레이션을 위한 Task를 생성합니다. 
-[Task](https://ap-northeast-2.console.aws.amazon.com/dms/v2/home?region=ap-northeast-2#tasks) 페이지로 이동하여 `Create task` 버튼을 클릭합니다.
+Next, create a task.   
+Move to the [Task](https://ap-northeast-2.console.aws.amazon.com/dms/v2/home?region=ap-northeast-2#tasks) and click `Create task` button.
 
-`Task configuration` 항목에 값을 설정합니다.
-Replication instnace 는 CloudFormation outputs 항목의 ReplicationInstance를 참고합니다.
-Source와 Target endpoint는 이전 단계에서 만든 endpoint 정보를 입력합니다.  
+Set the values at the `Task configuration`. Please refer the ReplicationInstance at the [CloudFormation](https://ap-northeast-2.console.aws.amazon.com/cloudformation/home?region=ap-northeast-2#/stacks/outputs?filteringStatus=active&filteringText=&viewNested=true&hideStacks=false&stackId=arn%3Aaws%3Acloudformation%3Aap-northeast-2%3A389498866763%3Astack%2FDBforMSA%2Fd0315a00-1ee6-11ed-a34b-06c206b00c16) outputs tab.   
+Enter the Source and Target endpoint as the endpoint you created in the previous step.   
 
 ```
-* Task Identifier(태스크 식별자) : task-seoulsummit-oracle-dynamodb
-* Replication instance(복제 인스턴스) : ri-oracle-to-mongodb
-* Source database endpoint(소스 데이터베이스 엔드포인트) : s-seoulsummit-endpoint
-* Target database endpoint(대상 데이터베이스 엔드포인트) : t-seoulsummit-dynamodb1
-* Migration type(마이그레이션 유형) : Migrate existing data(기존 데이터 마이그레이션)
+* Task Identifier : task-seoulsummit-oracle-dynamodb
+* Replication instance : ri-oracle-to-mongodb
+* Source database endpoint : s-seoulsummit-endpoint
+* Target database endpoint : t-seoulsummit-dynamodb1
+* Migration type : Migrate existing data
 ```
 
 ![image 16](./images/16.png)
 
-`Task settings`를 아래와 같이 설정합니다.  
+Set `Task settings`   
 ![image 17](./images/17.png)
 
-`Table mappings` 정보를 설정합니다.
-JSON editor 버튼을 선택하고 아래 editor에 JSON 을 입력합니다.
+Set `Table mappings`   
+Choose JSON editor and enter the JSON below at the JSON editor.   
 ![table_mappings](./images/table_mappings.png)
 ~~~json
 {
@@ -366,36 +343,34 @@ JSON editor 버튼을 선택하고 아래 editor에 JSON 을 입력합니다.
 }
 ~~~
 
-마지막으로 `Manually later`를 선택하고 `Create task` 버튼을 클릭합니다.  
+Choose `Manually later` and click `Create task` button.   
 ![image 19](./images/19.png)
 
-Task 생성이 완료되었으면 Task를 실행합니다.  
+Run the task.     
 ![image 20](./images/20.png)
 
-10만건 데이터를 마이그레이션하는데 14분 43초 소요되었습니다.
+Migrating 100,000 rows took 14m 13s.   
 ![image 20](./images/complete_dms.png)
 
-[DynamoDB](https://ap-northeast-2.console.aws.amazon.com/dynamodbv2/home?region=ap-northeast-2#tables) 이동하여 `purchase_t` 를 클릭합니다.
+Move to the [DynamoDB](https://ap-northeast-2.console.aws.amazon.com/dynamodbv2/home?region=ap-northeast-2#tables) and click `purchase_t`.
 ![image 24](./images/24.png)
 
-purchase_t 를 선택한 후 오른쪽 위에 "Explore table items"를 클릭합니다.  
+Choose `purchase_t` and click `Explore table items`.
 ![image 21](./images/21.png)
 
-데이터가 마이그레이션 된 것을 확인할 수 있습니다.
+You can see the data migrated from Oracle.   
 ![image 22](./images/22.png)
 
-하나의 아이템을 선택하면 해당 아이템의 상세 데이터를 볼 수 있습니다.
+Click one of items and check the details of it.
 ![image 23](./images/23.png)
 
 ----
 
-# Oracle에서 구매내역 조회 테스트
+# Test searching purchase list in Oracle and DynamoDB
 
 ---
-
-### 1. 구매내역을 조회하는 Oracle 기반의 어플리케이션을 기동합니다.
-
-MobaXterm의 `Legacy_server` Session에서 아래의 명령어를 수행합니다.
+### 1. Run the lagacy application
+Move to the `Legacy_server` Session in MobaXterm and execute the commands below.
 ~~~
 ec2-user@ip-10-100-1-101:/home/ec2-user> cd workshop04/legacy
 ec2-user@ip-10-100-1-101:/home/ec2-user/workshop04/legacy> source bin/activate
@@ -410,9 +385,8 @@ ec2-user@ip-10-100-1-101:/home/ec2-user/workshop04/legacy> source bin/activate
 ~~~
 ---
 
-### 2. Gatling을 사용하여 legacy 시스템(오라클)에 구매내역 조회 부하를 주입하고 어플리케이션 성능을 측정합니다.
-
-아래 명령어는 Bastion Server의 Command Prompt에서 실행합니다.
+### 2. (Oracle)Generate searching purchase list requests using Gatling.
+Execute the commands below in Bastion Server(Windows server)
 ![image](./images/commandPrompt.png)
 
 ~~~
@@ -425,9 +399,9 @@ Choose a simulation number:
      [1] SeoulSummit.Workshop02_msa
      [2] SeoulSummit.Workshop04_legacy
      [3] SeoulSummit.Workshop04_msa
-2(2번 시나리오를 수행합니다.)
+2(Enter)
 Select run description (optional)
-(엔터를 한번 더 입력합니다.)
+(Enter)
 Simulation SeoulSummit.Workshop04_legacy started...
 
 ================================================================================
@@ -440,27 +414,22 @@ Simulation SeoulSummit.Workshop04_legacy started...
           active: 2      / done: 114
 ================================================================================
 ~~~
-부하가 종료된 후 성능 통계정보를 확인합니다. p95의 평균 응답시간은 92ms 입니다.
-
+You can see the result of the test. The average latency of p95 is 92ms.   
 ![image](./images/gatling_oracle.png)   
 
-위의 링크를 웹브라우저로 열어서 Web으로 제공되는 성능 보고서도 확인해 봅니다.
-
+Open the link above in the web brower.   
 ![image 3](./images/3.png)
 ![image 3-1](./images/3-1.png)
 ![image 4](./images/4.png)
 
-MobaXterm `Legacy_server` Session 으로 이동 후 ctrl+C로 어플리케이션을 중지합니다.
+Move to `Legacy_server` Session in MobaXterm and enter ctrl+C to stop the lagacy application.
 ~~~
 10.100.1.103 - - [07/Apr/2022 15:05:29] "GET /legacy/selectPurchase HTTP/1.1" 200 -
 ^C(legacy) ec2-user@ip-10-100-1-101:/home/ec2-user/workshop04/legacy>
 ~~~
-
 ---
-
-### 3. Gatling을 이용하여 DynamoDB 기반의 구매 내역 조회 어플리케이션 성능을 확인합니다.
-
-MobaXterm `MSA_Server` 세션으로 이동하여 어플리케이션을 실행합니다.
+### 3. (DynamoDB)Generate requests for searching purchase list.
+Move to the `MSA_Server` session in `MobaXterm` and run application.   
 ~~~
 ec2-user@ip-10-100-1-101:/home/ec2-user> cd workshop04/msa
 ec2-user@ip-10-100-1-101:/home/ec2-user/workshop04/msa> source bin/activate
@@ -475,9 +444,9 @@ ec2-user@ip-10-100-1-101:/home/ec2-user/workshop04/msa> source bin/activate
 ~~~
 
 
-Gatling으로 부하테스트를 수행합니다.   
-부하테스트는 Cloudwatch 지표를 표시하기 위해서 10분 동안 수행되도록 하였습니다.(Cloudwatch가 1분 평균 그래프이기 때문에 부하 시간이 너무 짧을 경우 그래프가 명확하게 표시되지 않습니다.)   
-아래 명령어는 Bastion Server의 Command Prompt에서 실행합니다.
+Generate requests using Gatling.   
+The test performed for 10 minutes.
+Execute the commands below in Bastion Server(Windows server)
 
 ![image](./images/commandPrompt.png)
 
@@ -491,9 +460,9 @@ Choose a simulation number:
      [1] SeoulSummit.Workshop02_msa
      [2] SeoulSummit.Workshop04_legacy
      [3] SeoulSummit.Workshop04_msa
-3(3번 시나리오를 수행합니다.)
+3(Enter)
 Select run description (optional)
-(엔터를 한번 더 입력합니다.)
+(Enter)
 Simulation SeoulSummit.Workshop04_msa started...
 
 ================================================================================
@@ -506,40 +475,35 @@ Simulation SeoulSummit.Workshop04_msa started...
           active: 2      / done: 219
 ================================================================================
 ~~~
-부하가 종료된 후 성능 통계정보를 확인합니다. p95의 평균 응답시간은 56ms 입니다.
+You can see the result of the test. The average latency of p95 is 56ms.   
 ![image](./images/gatling_dynamodb.png)
 
-
-
-위의 링크를 웹브라우저로 열어서 Web으로 제공되는 성능 보고서도 확인해 봅니다.
-
+Open the link above in the web brower.   
 ![image 25](./images/25.png)
 ![image 26](./images/26.png)
 ![image 27](./images/27.png)
 
 
 
-[Cloudwatch지표](https://ap-northeast-2.console.aws.amazon.com/dynamodbv2/home?region=ap-northeast-2#table?initialTagKey=&name=purchase_t&tab=monitoring)를 확인해 봅니다.   
-Latency 카테고리에 Get latency 지표 그래프를 확대합니다.   
+Check the [Cloudwatch metric](https://ap-northeast-2.console.aws.amazon.com/dynamodbv2/home?region=ap-northeast-2#table?initialTagKey=&name=purchase_t&tab=monitoring).  
+Zoom in the `Get latency` metric in the latency category.   
 
 ![image](./images/cloudwatch_latency.png)
 ![image](./images/cloudwatch_latency_large.png)
 
-처음에는 latency가 높지만 점점 낮아지며 2ms의 latency를 안정적으로 유지하는 것을 볼 수 있습니다.
-하지만 End to End의 전체 구간에 걸친 응답속도는 어플리케이션, 네트워크, 인스턴스의 리소스 상황 등 여러 요소에 영향을 받아 DynamoDB에서 보여주는 지표보다 더 높아진다는 것을 기억하시길 바랍니다.
+
+As time goes by, the response time decreases and remains stable at 2ms.
 
 ---
 
 ~~~
-이번 Workshop에서는 Oracle data를 DynamoDB로 DMS를 활용하여 마이그레이션해 보았습니다.
+You have done migrating data from Oracle to DynamodBD using DMS.
 
-또 Gatling을 통해 각각의 서비스에 대해서 구매상세조회 단위기능을 테스트 해보고 성능을 비교해 볼 수 있었습니다.
-
-DynamoDB는 사용자와 Data가 늘어나더라도, RDB와 다르게 single digit ms의 response time을 보장합니다.
-또한 NOSQL의 schemaless특성을 활용하여 유연하고 빠른 어플리케이션 개발이 가능하게 되었습니다.
+DynamoDB supports single-digit millisecond read and write performance at any scale.
+The schemaless nature of DynamoDB enables fast and flexibel application development.
 ~~~
 
 ---
 
-[다음 워크샵으로 - workshop99(워크샵 자원 삭제하기) ](../workshop99/workshop99.md) 
+[To the next - workshop99(Cleansing the workshop resource) ](../workshop99/workshop99.md) 
 

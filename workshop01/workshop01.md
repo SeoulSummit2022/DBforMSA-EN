@@ -1,68 +1,74 @@
 
 
-# Workshop01(MongoDB를 활용한 CRM 리포트 서비스 분리)
+# Workshop01(Separation of CRM Report Service Using MongoDB)
 
 
 
-***엔터프라이즈 모놀리틱 DB를 MSA 구조로 전환하기* 세션의 Workshop1에 오신 것을 환영합니다. **
+## Transforming Enterprise Monolithic DB to MSA Structure
 
-**Workshop1 에서는 CRM Report 성격의 Oracle Data를 MongoDB로 마이그레이션해보고, MongoDB에서  어떻게 구현되는지 실습을 통해 알아보겠습니다.**
+**Welcome to Workshop1 in Session **
+
+**You will migrate CRM reporting data in Oracle to MongoDB, and learn how application is working with MongoDB**
 
 ---
 
 ### Architecture Diagram
 
-![image-20220413131156398](images/image-20220413131156398.png)
+![image-20220818132811612](images/image-20220818132811612.png)
+
+
 
 ---
 
-### 시나리오 소개
+### Scenario 
 
 ```
-당신은 RETAIL 업체에서 일하고 있으며, 개발팀과 DBA를 이끄는 Team Leader입니다.
+You work for a RETAIL company, and you are a Team Leader who leads the development team and DBA.
 
-고객만족팀에서는 기존에 Java와 Oracle로 만들어진 Legacy CRM 시스템을 사용하고 있습니다. 
-최근 몇년간 시스템을 이용하면서 데이터가 누적되면서 성능 이슈와 함께 Storage 이슈도 발생하고 있습니다.
-또한 새로 입사한 신규 개발자들은 Java보다는 경량화된 Python이나 JS를 개발에 이용하고 싶어합니다. 
+The Customer Satisfaction Team uses Legacy CRM systems built in Java and Oracle.
+In recent years, systems have accumulated data, resulting in performance degradation issue.
+New hired developers also want to use FLASK or JS, which is lighter than Java, for development.
 
-당신은 고객만족팀과의 미팅 후에 "CRM - 고객 상담 데이터"중 2019년 이전 Data들은 단순 조회 업무로만 사용됨을 알게 되었습니다.
+After the meeting with the customer satisfaction team, you found that the data before 2019 among the "CRM - Customer Consultation Data" were used only for simple inquiry.
 
-기존 Legacy Java Application에서는 "고객 상담 데이터"를 보여주기 위해서 여러개의 Table을 Join해야 했고, 
-이로 인해서 각 팀에서는 다음과 같은 불만 사항이 있습니다.
 
-1. DBA : Size가 큰 Table간의 다중 Join Report 생성으로 인한 Main Oracle Server 부하 증가, 고객 응대 Data의 지속적 증가로 인한 Storage 공간 이슈
-2. 개발자 : 변경/신규 개발을 위한 Schema 변경이 필요하지만, 이로 인한 Main Oracle 영향도 때문에 배포를 특정 PM 시간에만 할 수 있음으로 개발 생산성이 떨어짐
+Traditional Legacy Java applications required joining multiple tables in Oracle to show "customer consultation report".
+As a result, each team has the following complaints:
 
-그래서 당신은 2019년 이전 데이터들을 다중 Join RDB Table 구조에서 하나의 Document 형태로 변경하는 아이디어를 떠올렸고, 
-이를 통해 Main DB의 부하와 사용량을 줄이고 개발자들이 좀 더 유연하게 개발을 할 수 있지 않을까 생각했습니다.
+1. DBA: Main Oracle's performance degradation issue because of complexed joining tables to populate "customer consultation report". 
 
-그러면 기존 RDB에 저장된 복잡한 구조의 Data를 어떻게 NoSQL(MongoDB) Database로 쉽게 이관할 수 있을까요?
+2. Developer: We want to build new application and to deploy it rapidly, but DBA team concerns side-effects such as schema changing result in locking main application. We want to use schemaless database, not to concern  
+To increase development efficiency, we want to use schemaless database to develop and to deploy fast.
+
+So you came up with the idea of changing data before 2019 from a multi-joined RDB table structure to a single document form. You thought this would reduce the load and usage of Oracle DB and also allowing developers to develop more flexibly.
+
+So how can you easily transfer complex structured data stored in an existing Oracle to a NoSQL (MongoDB) database?
 
 ```
 
 
 
-# 작업에 필요한 Session 5개를 생성합니다.
+# Open 4 new session in MobaXTerm
 
-1. 작업을 위해 MobaXterm에서 Session을 5개를 만듭니다.
+1. Connecting to Oracle (double click or Execute)
 
 ![image-20220207142002894](images/image-20220207142002894.png)
 
 
 
-2. Session 5개 Open
+2. Open 4 new Session 
 
 ![image-20220207142223185](images/image-20220207142223185.png)
 
 
 
-3. Session Rename - `Oracle-HR`, `AP-TOMCAT`, `AP-FLASK`, `MongoDB`, `Extra`로 각각 변경
+3. Session Rename - `Oracle-HR`, `AP-TOMCAT`, `AP-FLASK`, `MongoDB`
 
 ![image-20220207142326844](images/image-20220207142326844.png)
 
 
 
-4. Session 이름 변경 후 확인
+4. Review - Session Name changed 
 
 <img src="images/image-20220309232532606.png" alt="image-20220309232532606" width="882px" />
 
@@ -70,27 +76,27 @@
 
 ---
 
-# Oracle DB의 JOIN DATA를 MongoDB로 마이그레이션 
+# Migrate Oracle Joined-Table data to MongoDB
 
-1. Bastion Host에서 `SQL Developer`를 실행합니다.(최초 실행 시 10~20초 정도 소요됩니다.)
+1. Executing `SQL Developer` in Bastion Host (It takes 20-30sec to launch at first time)
 
 ![image-20220215154430833](images/image-20220215154430833.png)
 
 ---
 
-2. `oracle-hr`을 선택하고 마우스 우측 버튼을 누른 후 "Connect" 실행
+2. Select `oracle-hr`, then click right mouse butto, then execute `Connect`
 
 ![image-20220215154626853](images/image-20220215154626853.png)
 
 ---
 
-3. 바탕 화면의 `Query3.txt`를 Double Click하여 엽니다.
+3. Open `Query3.txt` on desktop in bastion
 
 ![image-20220215155804896](images/image-20220215155804896.png)
 
 ---
 
-4. Query3.txt의 내용을 모두 복사해서 SQL Developer의 Worksheet에 붙여 넣습니다.
+4. Copy all contents in Query3.txt, then paste it to `worksheet in SQL developer`
 
 ![image-20220216113716659](images/image-20220216113716659.png)
 
@@ -98,7 +104,7 @@
 
 ---
 
-5. 1~5번까지의 Query를 직접 수행해서 CRM DB의 Data를 확인합니다. 
+5. Run Query 1 ~ Query 5 to check CRM DB data in Oracle
 
 ```
 Query 1 : CUSTOMERS CUSTOEMR_SERVIE_HISTORY Table 의 일부 Data를 확인
@@ -114,6 +120,8 @@ Query 4 : Query2(고객 상담 LOG Data)의 Data 중 조회용으로만 사용 �
 Query 5 : CUSTOMERS 와 CUSTOMER_SERVICE_HISTORY Table을 Join한 결과 중 2019년 1월 1일 이전 데이터 확인
 
 ```
+
+% 
 
 Query 실행은 원하는 SQL문장에 커서를 가져가거나 Highlight한 후 초록색 실행 버튼을 클릭합니다.
 

@@ -1,48 +1,44 @@
-# 키페어 생성
+# Create Key pair
 
-1. AWS Console에 Login 합니다.
-
----
-
-2. 서비스 => EC2로 이동
-
-![image-20220308150041344](images/image-20220308150041344.png)
+1. Login to the AWS Management Console.
 
 ---
 
-3. 화면 좌측에서 "네트워크 및 보안" => "키 페어" Click
+2. Service => Search window => Move to the EC2
 
-![image-20220308150436606](images/image-20220308150436606.png)
-
----
-
-4. "키 페어 생성" Click
-
-![image-20220308150745288](images/image-20220308150745288.png)
+![image-1](images/image-1.png)
 
 ---
 
-5. 이름 : `DBforMSA` 입력 후 "키 페어 생성" Click
+3. In the left pane, "Network & Security" => "Key Pairs" Click
 
-![image-20220308150914899](images/image-20220308150914899.png)
-
----
-
-6. 자동으로 Private Key인 DBforMSA.cer 혹은 DBforMSA.pem가 개인 Laptop으로 Download됩니다. 
-
-   보안적으로 매우 중요한 파일이기 때문에 안전한 곳에 저장해둡니다.
-
-![image-20220308151225349](images/image-20220308151225349.png)
-
-
-
-![image-20220308151639076](images/image-20220308151639076.png)
+![image-2](images/image-2.png)
 
 ---
 
-7. Console에서도 방금 생성된 Key File을 확인합니다.
+4. Click the "Create ky pair" button
 
-![image-20220308151833671](images/image-20220308151833671.png)
+![image-3](images/image-3.png)
+
+---
+
+5. Name : `DBforMSA` and click the "Create key pair" button
+
+![image-4](images/image-4.png)
+
+---
+
+6. You can see DBforMSA.cer or DBforMSA.pem file on your computer downloaded.
+
+   This file should be managed securely.
+
+![image-5](images/image-5.png)
+
+---
+
+7. You can see the key file in the management console.
+
+![image-6](images/image-6.png)
 
 
 
@@ -50,68 +46,66 @@
 
 ---
 
-# 실습 환경 구성
+# Environment Configuration
 
-1. CloudFormation 으로 이동
+1. Move to the CloudFormation console.
 
-![image-20220207102938764](images/image-20220207102938764.png)
-
----
-
-2. "스택 작업" => "새 리소스" 선택 또는 "스택 생성"  Click
-
-![image-20220207103001305](images/image-20220207103001305.png)
+![image-7](images/image-7.png)
 
 ---
 
-3. "Amazon S3 URL"에 `https://shared-kiwony.s3.ap-northeast-2.amazonaws.com/OnPREM4.yml` 을 입력 후 "다음" Click
+2. "Stack" => "Create stack" => "With new resources(standard)"  Click
 
-![image-20220207103043253](images/image-20220207103043253.png)
-
----
-
-4. "스택 이름"에 `DBforMSA`를 입력, KeyName에 전 Step에서 다운로드 받은 `DBforMSA`를 선택 후 "다음" Click
-
-![image-20220308160008365](images/image-20220308160008365.png)
+![image-8](images/image-8.png)
 
 ---
 
-5. "스택 옵션 구성" Page에서 "다음" Click
-5. "검토" Page에서 맨 아래 `AWS CloudFormation에서 사용자 지정 이름으로 IAM 리소스를 생성할 수 있음을 승인합니다`를 체크 후 "스택 생성" Click
+3. Enter `https://shared-kiwony.s3.ap-northeast-2.amazonaws.com/OnPREM4.yml` and click "Next"
 
-![image-20220207103202153](images/image-20220207103202153.png)
-
----
-
-6. "이벤트"를 Click하여 CloudFormation Stack이 정상적으로 생성되는지 확인(약 5~10분 소요)
-
-![image-20220207103855903](images/image-20220207103855903.png)
-
-
-
-**Stack 생성이 완료되면 `CREATE_COMPLTE`로 표시 됨**
-
-![image-20220207103925083](images/image-20220207103925083.png)
+![image-9](images/image-9.png)
 
 ---
 
----
+4. Stack name : `DBforMSA`   
+   KeyName : `DBforMSA`
 
-# 실습을 위해 Bastion Host로 접속
-
-### (모든 Handson은 Bastion Host를 통해서 이뤄집니다.)
-
----
-
-1. CloudFormation => 출력 => `IPWindowsPublicIP`를 확인
-
-![image-20220207104312974](images/image-20220207104312974.png)
+![image-10](images/image-10.png)
 
 ---
 
-2. "RDP Client"를 사용하여 Bastion 서버에 접속(Windows는 mstsc.exe, MAC은 Microsoft Remote Desktop 사용)
+5. "Configure stack options" - Click "Next"
 
-   아직 EC2 인스턴스가 구동 중이라서 접속이 안 될경우 1~2분 후에 다시 접속을 시도합니다.
+6. In the "Review DBforMSA" page, check `I acknowledge that AWS CloudFormation might create IAM resources with custom names.` and click "Create stack"
+
+![image-11](images/image-11.png)
+
+---
+
+7. You can see the progress on the "Events" tab.(It will complete in about 10 minutes.)
+
+![image-12](images/image-12.png)
+
+
+
+**`CREATE_COMPLTE`**
+
+![image-13](images/image-13.png)
+
+---
+
+---
+
+# Connect to the bastion host server
+
+---
+
+1. CloudFormation => Outputs => `IPWindowsPublicIP`
+
+![image-14](images/image-14.png)
+
+---
+
+2. Connect to the bastion host using "RDP Client"( Windows : mstsc.exe, MAC : Microsoft Remote Desktop)
 
 **Windows Laptop**
 
@@ -127,11 +121,11 @@
 
 ---
 
-3. Bastion 접속 
+3. Connect to the bastion 
 
    ```
-   사용자명 : Administrator
-   비밀번호 : Octank#1234
+   User : Administrator
+   Password : Octank#1234
    ```
 
    
@@ -144,21 +138,21 @@
 
 ---
 
-4. 다운로드 받았던 `DBforMSA.cer(또는 DBforMSA.pem)` 파일을 개인 Laptop에서 Bastion Server로 복사 합니다.
+4. Copy `DBforMSA.cer(or DBforMSA.pem)` file downloaded to the bastion server.
 
-**사용자 PC가 MAC Laptop일 경우 키 파일 복사 방법**
+**If your pc is a MAC laptop**
 
 ![image-20220308160910914](images/image-20220308160910914.png)
 
 
 
-**사용자 PC가 Windows Laptop일 경우 키 파일 복사 방법**
+**If your pc is a Windows laptop**
 
 ![image-20220308161206849](images/image-20220308161206849.png)
 
 
 
-**복사한 pem 파일을 Bastion Server의 C:\keys 로 복사합니다.**
+**Paste the pem file into C:\keys in the Bastion Server.**
 
 
 
@@ -168,7 +162,7 @@
 
 ---
 
-5. MobaXterm(SSH Terminal Program)을 실행합니다.
+5. Execute MobaXterm(SSH Terminal Program).
 
 ![image-20220308161915397](images/image-20220308161915397.png)
 
@@ -176,18 +170,18 @@
 
 ---
 
-6. "User Sessions"에서 "OracleServer"를 선택 후 "Edit session" 선택
+6. Choose "OracleServer" =>  "Edit session"
 
 ![image-20220207140508645](images/image-20220207140508645.png)
 
 ---
 
-7. Server접속을 위한 pem key 설정
-   1. "Advanced SSH Sessting" 선택
-   2. "Use private Key" Check
-   3. "Key 불러오기" 선택
-   4. "C:\keys"로 이동
-   5. "DBforMSA.cer"을 선택 후 open
+7. Configure the pem key to connec to Oracle server
+   1. "Advanced SSH Sessting"
+   2. Check "Use private Key"
+   3. Click "Open Key"
+   4. Move to the "C:\keys"
+   5. Chooose the "DBforMSA.cer" and open
    6. "OK" Click
 
 ![image-20220308165918129](images/image-20220308165918129.png)
@@ -198,19 +192,19 @@
 
 ---
 
-8. Oracle Server 접속
+8. Connect to the Oracle Server
 
-   **Execute"로 서버 접속**
+   **Execute**
 
 ![image-20220207141433762](images/image-20220207141433762.png)
 
-**Fingerprint Alert Accept Click**
+**Click Accept**
 
 ![image-20220207141628256](images/image-20220207141628256.png)
 
 
 
-**서버 접속 확인**
+**You connected the Oracle server**
 
 ![image-20220207141741293](images/image-20220207141741293.png)
 
@@ -218,4 +212,4 @@
 
 ---
 
-[다음 워크샵으로 - workshop01(MongoDB를 활용한 CRM 리포트 서비스 분리) ](../workshop01/workshop01.md) 
+[To the next - workshop01(MongoDB를 활용한 CRM 리포트 서비스 분리) ](../workshop01/workshop01.md) 
