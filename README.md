@@ -48,9 +48,13 @@ workshop04 - Migrating an order service using DynamoDB
 ### Workshop Introduction
 
 ```
-This workshop makes you understand how four services (CRM Report, Game Ranking, Limited Offer, Order History) working in Oracle Monolith DB are migrated to REDIS, MongoDB, DynamoDB upon its respective purpose and the advantages of using DB properly upon purpose.
+This workshop makes you understand how four services (CRM Report, Game Ranking, Limited Offer,
+Order History) working in Oracle Monolith DB are migrated to REDIS, MongoDB, DynamoDB 
+upon its respective purpose and the advantages of using DB properly upon purpose.
 
-There are various ways like Custom Application, 3rd party solutions(sql developer, CDC, ETL, Full Load), DB Engine native Utillity (datapump / dump) for Database to be migrated to the same or different  DB engines. This workshop provides the practical exercise of utilizing AWS Database Migration Service with a few ways above. 
+There are various ways like Custom Application, 3rd party solutions(sql developer, CDC, ETL tool), 
+DB Engine native Utillity (datapump / dump) for Database to be migrated to the same or different  
+DB engines. This workshop provides the practical exercise of utilizing AWS Database Migration Service with a few ways above. 
 
 Each scenario and hands-on contents are like below and it represents the advantages to utilize purpose-built databases by each scenario.
 
