@@ -102,7 +102,10 @@ the test will show the response time at single-digit millisecond that DynamoDB p
 
 
 ```
-%Notice% This workshop is intended to understand the advantages of using databases for various purpose, rather than focusing on AWS Services. Therefore, various DBs are running on one EC2. You can use managed database services in AWS to secure HA/DR, Security, Backup & Recovery and Scale.
+%Notice% This workshop is intended to understand the advantages of using databases 
+for various purpose, rather than focusing on AWS Services. 
+Therefore, various DBs are running on one EC2 for this workshop.
+You can use managed database services in AWS to secure HA/DR, Security, Backup & Recovery and Scale.
 ```
 
 
