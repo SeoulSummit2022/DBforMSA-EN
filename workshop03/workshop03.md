@@ -24,7 +24,7 @@ Gamers love your game, and active users grows rapily, and this result in overhae
 
 Recently, you had big event - LIMITED ITEM OFFER -, many gamers wanted to buy the item same time and it caused heavy performance degradation.
 And many gamers were not able to buy ITEM because of performance degradation, and they are very unhappy now.
-Your team figured out root case of issue, and it caused by HOT BLOCK in quantity table in Oracle.
+Your team figured out root cause of issue, and it caused by HOT BLOCK in quantity table in Oracle.
 You must resolve the issue before 2nd big event is coming. 
 
 How you gonna resolve this issue?
@@ -280,8 +280,8 @@ def order_redis():
 11. **Execute** the following commands to run **New  application with REDIS**.
 
 ```
-(legacy) ec2-user@ip-10-100-1-101:/home/ec2-user/workshop1/legacy>  cd ../msa/
-(legacy) ec2-user@ip-10-100-1-101:/home/ec2-user/workshop1/msa> source bin/activate
+(legacy) ec2-user@ip-10-100-1-101:/home/ec2-user/workshop3/legacy>  cd ../msa/
+(legacy) ec2-user@ip-10-100-1-101:/home/ec2-user/workshop3/msa> source bin/activate
 (msa) ec2-user@ip-10-100-1-101:/home/ec2-user/workshop1/msa> flask run --host=0.0.0.0
  * Environment: production
    WARNING: This is a development server. Do not use it in a production deployment.

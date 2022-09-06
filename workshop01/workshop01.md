@@ -192,7 +192,6 @@ create MATERIALIZED VIEW CSHARCH
 ```
 You are going to migrate data from Oracle to MongoDB using DMS(Database Migration Service). 
 Data migration by DMS are consists of 4 steps. 
-Data 이관은 크게 아래 3가지 작업을 통해서 이뤄집니다.
 
 1. Create Replication Instance : Replication instance will migrate data from source to target.
 2. Create Source ENDPOINT : Endpoint for source Oracle DB to read data
