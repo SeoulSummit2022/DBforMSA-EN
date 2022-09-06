@@ -24,7 +24,7 @@ To solve this problem, you decided to mirate data from Oracle to Redis.
 ```
 ---
 
-# Opne four MobaXterm sessions.
+# Open four MobaXterm sessions.
 
 1. You can find the way how to make a session at the Workshop01.
 2. Change the name of session. (`Oracle`,`Redis`,`Legacy_server`, `MSA_server`)
@@ -292,7 +292,7 @@ Move to the `Legacy_server` session and enter `CTRL+C` to stop the application.
 
 # Let's test on Redis
 
-1. Movet to the `MSA_server` session and execute the leaderboard service using Redis.
+1. Move to the `MSA_server` session and execute the leaderboard service using Redis.
 ```
 ec2-user@ip-10-100-1-101:/home/ec2-user/workshop02/msa> source bin/activate
 (msa) ec2-user@ip-10-100-1-101:/home/ec2-user/workshop02/msa> flask run --host=0.0.0.0 --port=4000
@@ -345,7 +345,7 @@ Simulation SeoulSummit.Workshop2_legacy started...
 3. Move to the `Redis` in MobaXterm.   
    Excute the script below and check the result.   
    `zrevrange leaderboard 10000 10010` returns the data ranked between 10000th ~ 10010th.   
-   
+    
     You can make the real time leaderboard service simply through sorted set of Redis.
 
 ```
@@ -378,8 +378,8 @@ ec2-user@ip-10-100-1-101:/home/ec2-user/workshop02/msa> redis-cli -a Welcome1234
 ---
 
 4. You can check the test result.   
-   The result show you better performance than Oracle test.   
-   
+The result show you better performance than Oracle test.   
+      
   
     ![image](./images/redis_stat.png)
 
@@ -400,6 +400,39 @@ Move to the `MSA_server` session and enter `CTRL+C` to stop the application.
 ^C(msa) ec2-user@ip-10-100-1-101:/home/ec2-user/workshop02/msa> 
 ```
 
+# Recap
+## Performance improvement for the leaderboard service
+Reponse time and excution count in Redis are improved about 5 times better than Oracle.
+![image](./images/recap_performance.png)
+## Real-time leaderboard
+The result of zrevrange command below shows that the userid from 10000th to 10010th place is refreshing in real-time.
+```
+127.0.0.1:6379> zrevrange leaderboard 10000 10010
+ 1) "25408"
+ 2) "144669"
+ 3) "91035"
+ 4) "43661"
+ 5) "158444"
+ 6) "92597"
+ 7) "144895"
+ 8) "142565"
+ 9) "962"
+10) "56587"
+11) "18594"
+127.0.0.1:6379> zrevrange leaderboard 10000 10010
+ 1) "78525"
+ 2) "36589"
+ 3) "74403"
+ 4) "184208"
+ 5) "155603"
+ 6) "65338"
+ 7) "277657"
+ 8) "209997"
+ 9) "29455"
+10) "20594"
+11) "81012"
+```
+
 ```
 You comleted to migrate data from Oracle to Redis.
 After migration, the performance is imporoved 5 times better than before.
@@ -408,7 +441,9 @@ You don't need systems for excuting batch job to make leaderboard so can save op
 ```
 ------------
 ```
-% We use Redis installed on EC2 for this workshop but in case of the production it is better to adopt Elasticache, AWS managed Redis service, that support high availability, performance and back up in the production.
+% We use Redis installed on EC2 for this workshop 
+but in case of the production it is better to adopt Elasticache, AWS managed Redis service, 
+that support high availability, performance and back up in the production.
 ```
 
 ---
