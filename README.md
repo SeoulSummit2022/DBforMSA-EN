@@ -79,7 +79,7 @@ Customers can decrease the cost of system maintenance and be provided with faste
 the real-time rank data when utilizing Redis sorted set 
 which is appropriate for the data like leader board. 
 
-S3- Hot Block can happen in case of the service that many users request/access at the same time 
+S3 - Hot Block can happen in case of the service that many users request/access at the same time 
 like item limited-offer events. 
 Hot Block brings about Latch contention or Lock contention inside DB, which results in the delay 
 of event processing. 
@@ -88,7 +88,7 @@ retail system and so on.
 This workshop shows how REDIS improves the performance against Hot Block generating in Oracle. 
 In reality, AB test result will show you 4 times better performance when using REDIS rather than Oracle.  
 
-S4- Order History Data to DynamoDB
+S4 - Order History Data to DynamoDB
 As the number of users and requests on relational database increases, the performance becomes worse 
 due to the impact of the relationship between tables, constraints, Join and etc 
 and also scalability is limited for performance acceptance. 
