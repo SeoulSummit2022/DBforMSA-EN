@@ -4,8 +4,6 @@
 
 
 
-## Transforming Enterprise Monolithic DB to MSA Structure
-
 **Welcome to Workshop1 in Session **
 
 **You will migrate CRM reporting data in Oracle to MongoDB, and learn how application is working with MongoDB**
@@ -23,28 +21,18 @@
 ### Scenario 
 
 ```
-You work for a RETAIL company, and you are a Team Leader who leads the development team and DBA.
+Existing Legacy Java applications requires joining multiple tables in Oracle to show "customer consultation report". As a result, each team has the following complaints:
 
-The Customer Satisfaction Team uses Legacy CRM systems built in Java and Oracle.
-In recent years, systems have accumulated data, resulting in performance degradation issue.
-New hired developers also want to use FLASK or JS, which is lighter than Java, for development.
+1. DBA: Main Oracle server's performance issue due to creating multiple Join report between huge-sized tables & Storage issue due to increasing accmulative data for customer.
 
-After the meeting with the customer satisfaction team, you found that the data before 2019 among the "CRM - Customer Consultation Data" were used only for simple inquiry.
+2. Developer: Schema change for update/new development is needed but development productivity/effeciency decreases since publishing is only available for the certain PM time being not to impact main system. 
 
-
-Traditional Legacy Java applications required joining multiple tables in Oracle to show "customer consultation report".
-As a result, each team has the following complaints:
-
-1. DBA: Main Oracle's performance degradation issue because of complexed joining tables to populate "customer consultation report". 
-
-2. Developer: We want to build new application and to deploy it rapidly, but DBA team concerns side-effects such as schema changing result in locking main application. We want to use schemaless database, not to concern  
-To increase development efficiency, we want to use schemaless database to develop and to deploy fast.
-
-So you came up with the idea of changing data before 2019 from a multi-joined RDB table structure to a single document form. You thought this would reduce the load and usage of Oracle DB and also allowing developers to develop more flexibly.
+So you came up with the idea of changing data before 2019 from a multi-joined RDB table structure to a single document form. This would reduce the load and usage of Oracle DB and also allow developers to develop more flexibly.
 
 So how can you easily transfer complex structured data stored in an existing Oracle to a NoSQL (MongoDB) database?
 
-% CRM reports usually join 6 ~ 14 tables in production environment, but we will only join 2 tables for workshop.
+%Notice% CRM reports usually join 6 ~ 14 tables in production environment, but we will only join 2 tables for the workshop.
+
 ```
 
 

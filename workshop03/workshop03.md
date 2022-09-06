@@ -17,21 +17,18 @@ Architecture Diagram
 ## Scenario 
 
 ```
-You are a leader to lead DBAs and developers. 
+You are a leader of developers and DBAs in a Game company. 
 
-Your game is using Oracle for Login, Manager, Log, SHOP and Auction services. 
-Gamers love your game, and active users grows rapily, and this result in overhaed in DB server.
+Your game is using Oracle RDMS for Login, Manager, Log, SHOP and Auction services including Game (World) server.
+Active users/Gamers grow rapidly, and this results in overhead in Game APP Server and Game DB server.
 
-Recently, you had big event - LIMITED ITEM OFFER -, many gamers wanted to buy the item same time and it caused heavy performance degradation.
-And many gamers were not able to buy ITEM because of performance degradation, and they are very unhappy now.
-Your team figured out root cause of issue, and it caused by HOT BLOCK in quantity table in Oracle.
-You must resolve the issue before 2nd big event is coming. 
+Recently, there was a big event - LIMITED ITEM OFFER -, many gamers wanted to buy the item at the same time and it caused severe performance issue in Main Oracle.
+There were lots of complaints from many users who were not able to purchase item and it should be resolved before the second event for LIMITED ITEM OFFER opens.
+Your team figured out the root cause of issue with DB team that the performance issue was caused by HOT BLOCK in Oracle DB.
+When accessing to the certain DB Block at the same time in RDBMS, Hot Block can be caused and this issue often happens in not only Item event in Game but also Telco billing system, Retail Order system.
+Hash-partitioned reverse-index can resolve this issue but sometimes it does not work.
 
-How you gonna resolve this issue?
-Luckily, you have good team members, they suggested you to replace quantity table to in-memory DB.
-
-% Hot Blocks are happened a lot in RDBMS world. This happens when many session repeatedly accesss one or a few blocks that protected by lock mechanism. To resolve hot block, DBA sometimes consider to use "hash partitioned reverse index" but sometimes it doesn't work.
-
+Having communicated with your development team and DBAs to resolve this issue, it has been decided to change the part that caused Hot Block to In-Memory DB.
 
 ```
 
