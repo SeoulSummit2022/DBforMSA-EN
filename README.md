@@ -80,9 +80,11 @@ the real-time rank data when utilizing Redis sorted set
 which is appropriate for the data like leader board. 
 
 S3- Hot Block can happen in case of the service that many users request/access at the same time 
-like item limited-offer events. Hot Block brings about Latch contention or Lock contention inside DB, 
-which results in the delay of event processing. Hot Block issue like this can happen in various workloads 
-like billing system, event system, retail system and so on. 
+like item limited-offer events. 
+Hot Block brings about Latch contention or Lock contention inside DB, which results in the delay 
+of event processing. 
+Hot Block issue like this can happen in various workloads like billing system, event system, 
+retail system and so on. 
 This workshop shows how REDIS improves the performance against Hot Block generating in Oracle. 
 In reality, AB test result will show you 4 times better performance when using REDIS rather than Oracle.  
 
