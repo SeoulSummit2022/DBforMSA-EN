@@ -182,7 +182,7 @@
 
 ---
 
-7. Configure the pem key to connec to Oracle server
+7. Configure the pem key to connect to Oracle server
    1. "Advanced SSH Sessting"
    2. Check "Use private Key"
    3. Click "Open Key"
