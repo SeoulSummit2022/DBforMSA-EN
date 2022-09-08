@@ -34,8 +34,8 @@ To solve this problem, you decided to mirate data from Oracle to Redis.
 
 # Migrate data from Oracle to Redis
 
-1. Move to the `Oralce` session at the MobaXterm.   
-   Connect the oracle database via SQLPLUS and execute the leaderboard select query.   
+1. Move to the `Oracle` session at the MobaXterm.
+   Connect the oracle database via SQLPLUS and execute the leaderboard select query.
    You can see the 300,000 data sorted by both USERLEVEL and EXPOINT columns.
 ```
 ec2-user@ip-10-100-1-101:/home/ec2-user> sudo su -
@@ -85,18 +85,18 @@ SQL>
 ```
 ---
 
-2. Create a table to store the data for migration.   
+2. Create a table to store the data for migration.
    Execute the query below on SQLPLUS to insert data into the table.
 
 ```
-CREATE TABLE "OSHOP"."USER_SCORE_REDIS_FORMAT" 
-   (	"key" VARCHAR2(15), 
-	"score" NUMBER, 
-	"member" NUMBER, 
+CREATE TABLE "OSHOP"."USER_SCORE_REDIS_FORMAT"
+   (	"key" VARCHAR2(15),
+	"score" NUMBER,
+	"member" NUMBER,
 	 CONSTRAINT "USER_SCORE_REDIS_FORMAT_PK" PRIMARY KEY ("member"));
 
 INSERT INTO USER_SCORE_REDIS_FORMAT
-SELECT 'leaderboard' AS key,  
+SELECT 'leaderboard' AS key,
 	userlevel||LPAD(expoint, 13, '0') AS score,
 	USERID AS MEMBER
 FROM USER_SCORE us;
@@ -114,7 +114,7 @@ If the result is normal, you can see the screen below.
 
 ---
 
-3. Make a CSV file using the data you made in previous step.   
+3. Make a CSV file using the data you made in previous step.
    Move to the `MSA_Server` session in MobaXTerm and execute the script below.
 
 ~~~
@@ -141,7 +141,7 @@ leaderboard,     211645071728030,                              296497
 ~~~
 ---
 
-4. Migrate user_score.csv data into Redis.     
+4. Migrate user_score.csv data into Redis.
    Execute the script below at the `MSA_Server` session.
 
 ~~~
@@ -178,9 +178,9 @@ cat redis-load.cmd | redis-cli -a Welcome1234 --pipe
 
 ---
 
-5. Check data migrated in Redis. 
-    * zcard leaderboard : Return the number of members in key 
-    * zrevrange leaderboard 0 9 : Return 10 items of data sorted 
+5. Check data migrated in Redis.
+    * zcard leaderboard : Return the number of members in key
+    * zrevrange leaderboard 0 9 : Return 10 items of data sorted
 
 ~~~
 ec2-user@ip-10-100-1-101:/home/ec2-user/workshop02/msa> redis-cli -a Welcome1234
@@ -207,7 +207,7 @@ ec2-user@ip-10-100-1-101:/home/ec2-user/workshop02/msa>
 
 # Checking how much the leaderboard select query affect Oracle
 
-1. Execute the leaderboard application that use Oracle database.   
+1. Execute the leaderboard application that use Oracle database.
    Move to the `Legacy_server` session in MobaXterm and enter the script below.
 ```
 ec2-user@ip-10-100-1-101:/home/ec2-user> cd workshop02/legacy
@@ -224,15 +224,15 @@ ec2-user@ip-10-100-1-101:/home/ec2-user/workshop02/legacy> source bin/activate
 
 ---
 
-2. Let's see the impact of executing the rank() qeury.   
-   [Gatling](https://gatling.io/) generates the requests for updating level and score.   
+2. Let's see the impact of executing the rank() qeury.
+   [Gatling](https://gatling.io/) generates the requests for updating level and score.
    In the meantime you are going to execute rank() function.
 
    Click the icon to open `Command Prompt` in the Windows `Bastion Server`.
-   ![image](./images/taskbar_cmd.png)   
+   ![image](./images/taskbar_cmd.png)
 
    Enter the scripts below in the command prompt.
-   The request from Gatling will retain for 3 minutes.   
+   The request from Gatling will retain for 3 minutes.
 
 ```
 C:\Users\Administrator> CD C:\gatling\bin
@@ -259,20 +259,20 @@ Simulation SeoulSummit.Workshop2_legacy started...
           active: 9      / done: 601
 ================================================================================
 ```
-You call rank() function in Oracle during updating requests are in progress.   
-Execute the script below in `Oracle` session in MobaXterm.   
+You call rank() function in Oracle during updating requests are in progress.
+Execute the script below in `Oracle` session in MobaXterm.
 
 ``` sql
 # This query makes data ordered by USERLEVEL and EXPOINT. You can find out the ranking of user from this data.
 SQL> SELECT userid, rank() OVER (ORDER BY USERLEVEL DESC, EXPOINT DESC) AS rank FROM USER_SCORE;
 ```
-![image](./images/1.png)   
+![image](./images/1.png)
 
 
 
 You can see the test result.
 
-![image](./images/gatling_result.png)   
+![image](./images/gatling_result.png)
 
 Open the web site from the link above and see the test result.
 
@@ -306,14 +306,14 @@ ec2-user@ip-10-100-1-101:/home/ec2-user/workshop02/msa> source bin/activate
 ```
 ---
 
-2. Let's see the impact of executing the zrevrange function.   
-   [Gatling](https://gatling.io/) generates the requests for updating level and score.   
+2. Let's see the impact of executing the zrevrange function.
+   [Gatling](https://gatling.io/) generates the requests for updating level and score.
    In the meantime you are going to execute zrevrange function.
 
-   The leaderboard data is changed and you can excute the zrevrange without overhead on Redis.   
-   So you can serve real time leaderboard service to your customer.   
+   The leaderboard data is changed and you can excute the zrevrange without overhead on Redis.
+   So you can serve real time leaderboard service to your customer.
    Click the icon to open `Command Prompt` in the Windows `Bastion Server`.
-   ![image](./images/taskbar_cmd.png)   
+   ![image](./images/taskbar_cmd.png)
 
 ```
 C:\Users\Administrator> CD C:\gatling\bin
@@ -342,10 +342,10 @@ Simulation SeoulSummit.Workshop2_legacy started...
 ```
 ---
 
-3. Move to the `Redis` in MobaXterm.   
-   Excute the script below and check the result.   
-   `zrevrange leaderboard 10000 10010` returns the data ranked between 10000th ~ 10010th.   
-    
+3. Move to the `Redis` in MobaXterm.
+   Excute the script below and check the result.
+   `zrevrange leaderboard 10000 10010` returns the data ranked between 10000th ~ 10010th.
+
     You can make the real time leaderboard service simply through sorted set of Redis.
 
 ```
@@ -377,19 +377,19 @@ ec2-user@ip-10-100-1-101:/home/ec2-user/workshop02/msa> redis-cli -a Welcome1234
 ```
 ---
 
-4. You can check the test result.   
-The result show you better performance than Oracle test.   
-      
-  
+4. You can check the test result.
+The result show you better performance than Oracle test.
+
+
     ![image](./images/redis_stat.png)
 
 ---
 
-  
 
-5. Open the web site from the link above and see the test result.  
+
+5. Open the web site from the link above and see the test result.
    The average latency of p95 is 20ms and the impact of zrevrange function is very low.
-  
+
     ![image](./images/5.png)
     ![image](./images/5-1.png)
     ![image](./images/6.png)
@@ -397,7 +397,7 @@ The result show you better performance than Oracle test.
 Move to the `MSA_server` session and enter `CTRL+C` to stop the application.
 ```
 10.100.1.103 - - [07/Apr/2022 13:00:38] "GET /msa/updateuserlevel HTTP/1.1" 200 -
-^C(msa) ec2-user@ip-10-100-1-101:/home/ec2-user/workshop02/msa> 
+^C(msa) ec2-user@ip-10-100-1-101:/home/ec2-user/workshop02/msa>
 ```
 
 # Recap
@@ -441,12 +441,12 @@ You don't need systems for excuting batch job to make leaderboard so can save op
 ```
 ------------
 ```
-% We use Redis installed on EC2 for this workshop 
-but in case of the production it is better to adopt Elasticache, AWS managed Redis service, 
+% We use Redis installed on EC2 for this workshop
+but in case of the production it is better to adopt Elasticache, AWS managed Redis service,
 that support high availability, performance and back up in the production.
 ```
 
 ---
 
-[To the next - workshop03(Accelerate Limited Offer using REDIS)](../workshop03/workshop03.md) 
+[To the next - workshop03(Accelerate Limited Offer using REDIS)](../workshop03/workshop03.md)
 
