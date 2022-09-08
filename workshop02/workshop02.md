@@ -139,6 +139,15 @@ leaderboard,     601645071728030,                              296495
 leaderboard,     91645071728030,                               296496
 leaderboard,     211645071728030,                              296497
 ~~~
+Please refer the description of the script below.
+```
+### 01-unload-data.sh : loads the contents to a csv.
+oracle@ip-10-100-1-101:/home/oracle/workshop02> cat 01-unload-data.sh
+sqlplus -s oshop/oshop<<EOF
+@unload_user_score.sql
+EOF
+exit
+```
 ---
 
 4. Migrate user_score.csv data into Redis.
