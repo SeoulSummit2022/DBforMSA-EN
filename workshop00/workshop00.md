@@ -22,7 +22,7 @@
 
 ---
 
-4. Click the "Create ky pair" button
+4. Click the "Create key pair" button
 
 ![image-3](images/image-3.png)
 
@@ -72,7 +72,7 @@
 
 ---
 
-4. Stack name : `DBforMSA`   
+4. Stack name : `DBforMSA`
    KeyName : `DBforMSA`
 
 ![image-10](images/image-10.png)
@@ -127,14 +127,14 @@
 
 ---
 
-3. Connect to the bastion 
+3. Connect to the bastion
 
    ```
    User : Administrator
    Password : Octank#1234
    ```
 
-   
+
 
 ![image-20220207105237250](images/image-20220207105237250.png)
 
@@ -182,7 +182,7 @@
 
 ---
 
-7. Configure the pem key to connec to Oracle server
+7. Configure the pem key to connect to Oracle server
    1. "Advanced SSH Sessting"
    2. Check "Use private Key"
    3. Click "Open Key"
@@ -218,4 +218,4 @@
 
 ---
 
-[To the next - workshop01(Separation of CRM Report Service Using MongoDB) ](../workshop01/workshop01.md) 
+[To the next - workshop01(Separation of CRM Report Service Using MongoDB) ](../workshop01/workshop01.md)
